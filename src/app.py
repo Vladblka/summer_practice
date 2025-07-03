@@ -26,9 +26,7 @@ class App:
         cls.height_val = None
         cls.cap = None
         cls.is_camera_active = False
-        cls.b_color_user = None
-        cls.g_color_user = None
-        cls.r_color_user = None
+        cls.down_color_user = None
         cls.x_coord = None
         cls.y_coord = None
         cls.radius = None
@@ -319,19 +317,15 @@ class App:
         def apply_color():
             """Функция - валидатор"""
             try:
-                b_val = int(down_blue.get())
-                g_val = int(down_green.get())
-                r_val = int(down_red.get())
+                color_val = int(down_blue.get())
 
-                if all(0 <= val <= 255 for val in [b_val, g_val, r_val]):
-                    cls.b_color_user = b_val
-                    cls.g_color_user = g_val
-                    cls.r_color_user = r_val
+                if (0 <= color_val <= 100):
+                    cls.down_color_user = color_val
                     dialog_window.destroy()
                     cls.bright_color()
                 else:
                     raise ValueError(
-                        "Значения должны быть числами от 0 до 255"
+                        "Значения должны быть числами от 0 до 100"
                         )
             except ValueError as e:
                 messagebox.showerror("Ошибка", f"{str(e)}")
@@ -341,30 +335,16 @@ class App:
 
         Label(
             dialog_window,
-            text=f"Введите значение для уменьшения синего спектра:"
+            text=f"Введите значение для уменьшения яркости в процетах от 0 до 100:"
             ).grid(row=0, column=0, padx=5, pady=5)
         down_blue = Entry(dialog_window)
         down_blue.grid(row=0, column=1, padx=5, pady=5)
-
-        Label(
-            dialog_window,
-            text=f"Введите значение для уменьшения зеленого спектра:"
-            ).grid(row=1, column=0, padx=5, pady=5)
-        down_green = Entry(dialog_window)
-        down_green.grid(row=1, column=1, padx=5, pady=5)
-
-        Label(
-            dialog_window,
-            text=f"Введите значение для уменьшения красного спектра:"
-            ).grid(row=2, column=0, padx=5, pady=5)
-        down_red = Entry(dialog_window)
-        down_red.grid(row=2, column=1, padx=5, pady=5)
 
         Button(
             dialog_window,
             text="Применить",
             command=apply_color
-            ).grid(row=3, columnspan=2, column=0, pady=5, padx=5)
+            ).grid(row=1, columnspan=2, column=0, pady=5, padx=5)
 
         dialog_window.resizable(False, False)
         dialog_window.geometry("+300+300")
@@ -380,19 +360,8 @@ class App:
 
             openсv_image = cv2.cvtColor(openсv_image, cv2.COLOR_RGB2BGR)
 
-            blue, green, red = cv2.split(openсv_image)
-
-            blue = np.clip(
-                blue.astype("int16") - cls.b_color_user, 0, 255
-                ).astype("uint8")
-            green = np.clip(
-                green.astype("int16") - cls.g_color_user, 0, 255
-                ).astype("uint8")
-            red = np.clip(
-                red.astype("int16") - cls.r_color_user, 0, 255
-                ).astype("uint8")
-
-            ready_image = cv2.merge((blue, green, red))
+            factor = (100 - cls.down_color_user) / 100
+            ready_image = np.clip(openсv_image * factor, 0, 255).astype("uint8")
 
             ready_image_rgb = cv2.cvtColor(ready_image, cv2.COLOR_BGR2RGB)
             pil_ready_image = Image.fromarray(ready_image_rgb)
